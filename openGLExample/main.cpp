@@ -113,15 +113,21 @@ void prepare_shader_program(void) {
 }
 
 
-void loadTexture(const char* filename) {
+void loadTexture(const char* filename, int type) {
 
 	glGenTextures(1, &texture_name);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_name);
 
-	//load_DDS_image(filename);
-	load_unpack_image(filename);
-
+	switch (type) {
+	case 1: //unpack
+		load_unpack_image(filename);	break;
+	case 2: //DDS
+		load_DDS_image(filename);	break;
+	case 3: //KTX
+		load_KTX_image(filename);	break;
+	}
+	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -137,8 +143,13 @@ void initialize_renderer(void) {
 	ViewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f - IMGSIZE * 1.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	
 	prepare_quad();
-	//loadTexture("Data/img1_JPG_DXT5.DDS");
-	loadTexture("Data/img1.jpg");
+
+	//Load 4 kind of texture
+
+	//loadTexture("Data/img1.jpg",1);		//unpacked image, no problem
+	//loadTexture("Data/img1_JPG_DXT5.DDS",2);	//DXT5 image, no problem
+	loadTexture("Data/img1_JPG_BC7.DDS",2);		//BC7 image, wrong
+	//loadTexture("Data/img1_JPG_BC7.KTX", 3);	//BC7 image, wrong
 
 	glutDisplayFunc(display);
 }

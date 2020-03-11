@@ -38,108 +38,6 @@ void load_unpack_image(const char *filename) {
 }
 
 
-struct astc_header
-{
-	uint8_t magic[4];
-	uint8_t blockdim_x;
-	uint8_t blockdim_y;
-	uint8_t blockdim_z;
-	uint8_t xsize[3];			// x-size = xsize[0] + xsize[1] + xsize[2]
-	uint8_t ysize[3];			// x-size, y-size and z-size are given in texels;
-	uint8_t zsize[3];			// block count is inferred
-};
-
-
-int suppress_progress_counter = 0;
-int perform_srgb_transform = 0;
-
-#define MAGIC_FILE_CONSTANT 0x5CA1AB13
-
-void load_astc_image(const char *filename)
-{
-	FILE *f = fopen(filename, "rb");
-	if (!f)
-	{
-		printf("Failed to open file %s\n", filename);
-		exit(1);
-	}
-	astc_header hdr;
-	size_t hdr_bytes_read = fread(&hdr, 1, sizeof(astc_header), f);
-	if (hdr_bytes_read != sizeof(astc_header))
-	{
-		fclose(f);
-		printf("Failed to read file %s\n", filename);
-		exit(1);
-	}
-
-	uint32_t magicval = hdr.magic[0] + 256 * (uint32_t)(hdr.magic[1]) + 65536 * (uint32_t)(hdr.magic[2]) + 16777216 * (uint32_t)(hdr.magic[3]);
-
-	if (magicval != MAGIC_FILE_CONSTANT)
-	{
-		fclose(f);
-		printf("File %s not recognized\n", filename);
-		exit(1);
-	}
-
-	int xdim = hdr.blockdim_x;
-	int ydim = hdr.blockdim_y;
-	int zdim = hdr.blockdim_z;
-
-	if (xdim < 3 || xdim > 12 || ydim < 3 || ydim > 12 || (zdim < 3 && zdim != 1) || zdim > 12)
-	{
-		fclose(f);
-		printf("File %s not recognized %d %d %d\n", filename, xdim, ydim, zdim);
-		exit(1);
-	}
-
-	int xsize = hdr.xsize[0] + 256 * hdr.xsize[1] + 65536 * hdr.xsize[2];
-	int ysize = hdr.ysize[0] + 256 * hdr.ysize[1] + 65536 * hdr.ysize[2];
-	int zsize = hdr.zsize[0] + 256 * hdr.zsize[1] + 65536 * hdr.zsize[2];
-
-	int xblocks = (xsize + xdim - 1) / xdim;
-	int yblocks = (ysize + ydim - 1) / ydim;
-	int zblocks = (zsize + zdim - 1) / zdim;
-	int size = xblocks * yblocks * zblocks * 16;
-	uint8_t *buffer = (uint8_t *)malloc(size);
-	if (!buffer)
-	{
-		fclose(f);
-		printf("Ran out of memory\n");
-		exit(1);
-	}
-	size_t bytes_to_read = xblocks * yblocks * zblocks * 16;
-	size_t bytes_read = fread(buffer, 1, bytes_to_read, f);
-	fclose(f);
-	if (bytes_read != bytes_to_read)
-	{
-		printf("Failed to read file %s\n", filename);
-		exit(1);
-	}
-
-	if (xdim == 12 && ydim == 12) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_12x12_KHR, xsize, ysize, 0, size, buffer);
-	}
-	else if (xdim == 10 && ydim == 10) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_10x10_KHR, xsize, ysize, 0, size, buffer);
-	}
-	else if (xdim == 8 && ydim == 8) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_8x8_KHR, xsize, ysize, 0, size, buffer);
-	}
-	else if (xdim == 6 && ydim == 6) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_6x6_KHR, xsize, ysize, 0, size, buffer);
-	}
-	else if (xdim == 5 && ydim == 5) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_5x5_KHR, xsize, ysize, 0, size, buffer);
-	}
-	else if (xdim == 4 && ydim == 4) {
-		glCompressedTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_ASTC_4x4_KHR, xsize, ysize, 0, size, buffer);
-	}
-
-	free(buffer);
-
-	return;
-}
-
 #define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
 #define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
 #define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
@@ -333,11 +231,9 @@ static unsigned int calculate_face_size(const KTXheader& h)
 }
 
 
-unsigned int load_KTX_image(const char * filename, unsigned int tex)
+void load_KTX_image(const char * filename)
 {
 	FILE * fp;
-	GLuint temp = 0;
-	GLuint retval = 0;
 	KTXheader h;
 	size_t data_start, data_end;
 	unsigned char * data;
@@ -346,7 +242,7 @@ unsigned int load_KTX_image(const char * filename, unsigned int tex)
 	fp = fopen(filename, "rb");
 
 	if (!fp)
-		return 0;
+		return ;
 
 	if (fread(&h, sizeof(h), 1, fp) != 1)
 		goto fail_read;
@@ -431,11 +327,11 @@ unsigned int load_KTX_image(const char * filename, unsigned int tex)
 		goto fail_header;
 	}
 
-	temp = tex;
-	if (tex == 0)
-	{
-		glGenTextures(1, &tex);
-	}
+	//temp = tex;
+	//if (tex == 0)
+	//{
+	//	glGenTextures(1, &tex);
+	//}
 
 	//glBindTexture(target, tex);
 
@@ -524,7 +420,7 @@ unsigned int load_KTX_image(const char * filename, unsigned int tex)
 		glGenerateMipmap(target);
 	}
 
-	retval = tex;
+	//retval = tex;
 
 fail_target:
 	delete[] data;
@@ -533,5 +429,5 @@ fail_header:;
 fail_read:;
 	fclose(fp);
 
-	return retval;
+	return;
 }
