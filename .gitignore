@@ -16,7 +16,6 @@
 # Build results
 [Dd]ebugPublic/
 x64/
-x86/
 bld/
 [Bb]in/
 [Oo]bj/
