@@ -64,7 +64,8 @@ void load_DDS_image(const char * imagepath) {
 	}
 
 	/* get the surface desc */
-	fread(&header, 124, 1, fp);
+	//fread(&header, 124, 1, fp);
+	fread(&header, 80, 1, fp);
 
 	unsigned int height = *(unsigned int*)&(header[8]);
 	unsigned int width = *(unsigned int*)&(header[12]);
@@ -109,8 +110,9 @@ void load_DDS_image(const char * imagepath) {
 		//format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
 		break;
 	default:
-		free(buffer);
-		return ;
+		format = GL_COMPRESSED_RGBA_BPTC_UNORM;
+		//free(buffer);
+		//return ;
 	}
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -142,6 +144,8 @@ void load_DDS_image(const char * imagepath) {
 	return ;
 	
 }
+
+
 
 struct KTXheader
 {

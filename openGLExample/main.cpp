@@ -126,6 +126,7 @@ void loadTexture(const char* filename, int type) {
 		load_DDS_image(filename);	break;
 	case 3: //KTX
 		load_KTX_image(filename);	break;
+		break;
 	}
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -148,8 +149,12 @@ void initialize_renderer(void) {
 
 	//loadTexture("Data/img1.jpg",1);		//unpacked image, no problem
 	//loadTexture("Data/img1_JPG_DXT5.DDS",2);	//DXT5 image, no problem
-	loadTexture("Data/img1_JPG_BC7.DDS",2);		//BC7 image, wrong
+	//loadTexture("Data/img1_JPG_BC7.DDS",2);		//BC7 image, wrong
 	//loadTexture("Data/img1_JPG_BC7.KTX", 3);	//BC7 image, wrong
+
+	loadTexture("Data/img1_1.DDS", 2);		//BC7 image, wrong
+	//loadTexture("Data/img1_2.DDS", 2);		//BC7 image, wrong
+
 
 	glutDisplayFunc(display);
 }
@@ -160,7 +165,7 @@ int main(int argc, char *argv[]) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize((int)IMGSIZE, (int)IMGSIZE);
-	glutInitContextVersion(4, 0);
+	glutInitContextVersion(4, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(program_name);
 
